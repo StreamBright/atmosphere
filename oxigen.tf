@@ -5,25 +5,16 @@ provider "aws" {
   profile                  = "default"
 }
 
+# resources
+
 resource "aws_cloudtrail" "audit" {
     name = "sb-audit"
     s3_bucket_name = "${aws_s3_bucket.sb-tf-test.id}"
-    s3_key_prefix = "/audit"
+    #cannot start with /
+    s3_key_prefix = "audit"
     include_global_service_events = false
 }
 
-/*
-    Website hosting
-    https://www.terraform.io/docs/providers/aws/r/s3_bucket.html
-    bucket = "s3-website-test.test.com"
-    acl = "public-read"
-    policy = "${file("policy.json")}"
-
-    website {
-        index_document = "index.html"
-        error_document = "error.html"
-    }
-*/
 resource "aws_s3_bucket" "sb-tf-test" {
     bucket = "sb-tf-test"
     force_destroy = false
@@ -66,6 +57,11 @@ POLICY
 
 # groups
 
+resource "aws_iam_group" "sb-audit" {
+    name = "sb-audit"
+    path = "/group/"
+}
+
 resource "aws_iam_group" "sb-adm" {
     name = "sb-adm"
     path = "/group/"
@@ -77,6 +73,11 @@ resource "aws_iam_group" "sb-api" {
 }
 
 # users 
+
+resource "aws_iam_user" "sb-audit-1" {
+    name = "sb-audit-1"
+    path = "/system/"
+}
 
 resource "aws_iam_user" "sb-api-app1" {
     name = "sb-api-app1"
@@ -118,13 +119,13 @@ resource "aws_iam_group_membership" "sb-api-apps" {
   group = "${aws_iam_group.sb-api.name}"
 }
 
-/*
-#access key
-
-resource "aws_iam_access_key" "joe" {
-  user = "${aws_iam_user.joe.name}"
+resource "aws_iam_group_membership" "sb-audit" {
+  name = "sb-audit"
+  users = [
+    "${aws_iam_user.sb-audit-1.name}"
+  ]
+  group = "${aws_iam_group.sb-audit.name}"
 }
-*/
 
 # policy
 
